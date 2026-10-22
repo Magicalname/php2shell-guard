@@ -1,0 +1,74 @@
+# php2shell-guard — Sigma detection rules for CVE-2026-109618 / CVE-2026-109619
+# Three rules in one file (separated by ---). Map the fields to your SIEM's schema.
+# Reference: https://github.com/SigmaHQ/sigma
+
+title: php2shell upload_progress abuse in web request
+id: a1f0e2c4-9b11-4c2e-8f77-php2shell0001
+status: experimental
+description: >
+  Detects an HTTP POST whose body contains PHP_SESSION_UPLOAD_PROGRESS, the
+  primary vector for CVE-2026-109618 / CVE-2026-109619 (php2shell). Legitimate
+  traffic rarely carries this string in a request body.
+references:
+  - https://github.com/php/php-src/security/advisories/GHSA-w8hw-w9fx-j79w
+  - https://github.com/php/php-src/security/advisories/GHSA-6wmf-4rv5-p3rp
+logsource:
+  category: webserver
+detection:
+  selection:
+    cs-method: POST
+    cs-uri|contains|all:
+      - ''
+  body:
+    c-body|contains: 'PHP_SESSION_UPLOAD_PROGRESS'
+  condition: selection and body
+falsepositives:
+  - Legitimate apps that explicitly use PHP's upload-progress feature (rare)
+level: high
+tags:
+  - attack.initial_access
+  - attack.t1190
+  - cve.2026.109618
+  - cve.2026.109619
+
+---
+title: php2shell possible OOM worker crash burst
+id: a1f0e2c4-9b11-4c2e-8f77-php2shell0002
+status: experimental
+description: >
+  A burst of HTTP 502s from a PHP backend can indicate attempts to trigger the
+  CVE-2026-109618 OOM corruption. High false-positive rate on its own — correlate
+  with upload_progress requests from the same source.
+logsource:
+  category: webserver
+detection:
+  selection:
+    sc-status: 502
+  timeframe: 1m
+  condition: selection | count() by cs-host > 30
+falsepositives:
+  - Backend restarts, deploys, unrelated upstream failures
+level: medium
+tags:
+  - cve.2026.109618
+
+---
+title: php2shell post-exploitation webshell indicators
+id: a1f0e2c4-9b11-4c2e-8f77-php2shell0003
+status: experimental
+description: >
+  New or modified PHP file in a webroot combined with command-execution query
+  parameters — a common pattern after a successful RCE drops a webshell.
+logsource:
+  category: webserver
+detection:
+  selection_params:
+    cs-uri-query|re: '(?i)[?&](cmd|exec|shell|system|c)='
+  condition: selection_params
+falsepositives:
+  - Legitimate admin tools that use these parameter names
+level: medium
+tags:
+  - attack.persistence
+  - attack.t1505.003
+  - cve.2026.109618

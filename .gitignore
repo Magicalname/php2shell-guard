@@ -1,0 +1,17 @@
+# local scan output
+*.csv
+report.*
+forensics.*.json
+results.json
+
+# real host inventories — never commit these
+hosts.txt
+hosts-*.txt
+!hosts.txt.example
+
+# editor / OS cruft
+*.swp
+*~
+.DS_Store
+.idea/
+.vscode/

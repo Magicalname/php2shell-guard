@@ -1,0 +1,17 @@
+# php2shell-guard — fleet host list (example)
+# Copy to hosts.txt and edit. hosts.txt is gitignored so you never
+# accidentally publish your server inventory.
+#
+# One target per line. Accepted forms:
+#   host
+#   user@host
+#   user@host:port
+#
+# Blank lines and # comments are ignored.
+# Entries that look like ssh options (-o...) or contain shell
+# metacharacters are rejected by the fleet runner.
+
+web01.example.com
+ops@web02.example.com
+ops@web03.example.com:2222
+# db01.example.com        # commented out — skipped
